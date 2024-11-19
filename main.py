@@ -3,6 +3,7 @@ import logging
 import threading
 from groq import Groq
 from irc.client import SimpleIRCClient
+from tts_handler import addToTtsQueue, startTtsThread
 
 SERVER = "irc.chat.twitch.tv"
 PORT = 6667
@@ -131,6 +132,7 @@ def process_message(user, message):
         content = completion.choices[0].message.content
         response = f"{greeting} {content}" if greeting else content
         messages.append({"role": "assistant", "content": response})
+        addToTtsQueue(response)
         return response.strip()
 
     except Exception as e:
@@ -138,6 +140,7 @@ def process_message(user, message):
 
 groq_client = Groq(api_key="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")
 load_memory()
+startTtsThread()
 threading.Thread(target=start_irc_client, daemon=True).start()
 
 while True:
