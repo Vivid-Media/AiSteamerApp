@@ -1,19 +1,16 @@
-import pyttsx3
+import edge_tts
 import threading
-import pyaudio
 import os
-import time
+import asyncio
+import pyaudio
+from pydub import AudioSegment
 from queue import Queue
-import subprocess
 
 VIRTUAL_CABLE_DRIVER = "CABLE Input"
 tts_queue = Queue()
 
 OUTPUT_FILE = "output.mp3"
 OUTPUT_WAV_FILE = "output.wav"
-
-# Initialize the pyttsx3 engine
-engine = pyttsx3.init()
 
 # Function to find the virtual cable
 def find_virtual_cable():
@@ -24,28 +21,13 @@ def find_virtual_cable():
             return device_info['index']
     raise RuntimeError("Virtual cable not found")
 
-# Function to set up TTS properties
-def setup_tts():
-    # Set properties like volume and speed if necessary
-    engine.setProperty('rate', 160)  # Speed of speech
-    engine.setProperty('volume', 1)  # Volume level (0.0 to 1.0)
-    voices = engine.getProperty('voices')
-    
-    # Set a female voice (on Windows, it might be index 1 or on macOS it could be 'com.apple.speech.synthesis.voice.Alex')
-    engine.setProperty('voice', voices[1].id)  # Adjust the index as per your system
-
-# Function to convert MP3 to WAV using ffmpeg
-def convert_mp3_to_wav(mp3_file, wav_file):
+# Function to synthesize TTS with edge-tts
+async def synthesize_tts(text, output_file):
     try:
-        # Use ffmpeg to convert MP3 to WAV
-        subprocess.call([
-            'ffmpeg', '-i', mp3_file, 
-            '-analyzeduration', '10000000', '-probesize', '5000000', 
-            wav_file
-        ])
+        communicate = edge_tts.Communicate(text, voice="en-US-AnaNeural")
+        await communicate.save(output_file)
     except Exception as e:
-        print(f"Error with ffmpeg conversion: {e}")
-        raise
+        print(f"Error in edge-tts synthesis: {e}")
 
 # Function to process the TTS queue
 def process_tts_queue():
@@ -60,37 +42,34 @@ def process_tts_queue():
             if os.path.exists(OUTPUT_WAV_FILE):
                 os.remove(OUTPUT_WAV_FILE)
 
-            # Use pyttsx3 to generate audio and save it to a file
-            engine.save_to_file(text, OUTPUT_FILE)
-            engine.runAndWait()
+            # Generate TTS output (MP3)
+            asyncio.run(synthesize_tts(text, OUTPUT_FILE))
 
-            # Convert the MP3 file to WAV
-            convert_mp3_to_wav(OUTPUT_FILE, OUTPUT_WAV_FILE)
+            # Convert MP3 to WAV using pydub
+            audio = AudioSegment.from_file(OUTPUT_FILE, format="mp3")
+            audio.export(OUTPUT_WAV_FILE, format="wav")
 
-            # Now, stream the generated output.wav to the virtual cable
+            # Find the virtual cable for audio playback
             virtual_cable_index = find_virtual_cable()
-            audio = pyaudio.PyAudio()
+            py_audio = pyaudio.PyAudio()
 
-            # Open the WAV file
+            # Configure stream to match the WAV file properties
+            stream = py_audio.open(
+                format=pyaudio.paInt16,  # pydub exports 16-bit WAV files
+                channels=1,             # Mono audio
+                rate=int(audio.frame_rate),  # Use the frame rate from the WAV file
+                output=True,
+                output_device_index=virtual_cable_index
+            )
+
+            # Play the WAV file
+            chunk_size = 1024
             with open(OUTPUT_WAV_FILE, "rb") as wf:
-                stream = audio.open(
-                    format=pyaudio.paInt16,
-                    channels=1,
-                    rate=22050,  # Ensure the correct sample rate (WAV typically uses 44100Hz or 22050Hz)
-                    output=True,
-                    output_device_index=virtual_cable_index
-                )
+                while chunk := wf.read(chunk_size):
+                    stream.write(chunk)
 
-                # Read and stream the WAV file in chunks
-                chunk_size = 1024
-                while True:
-                    data = wf.read(chunk_size)
-                    if not data:
-                        break
-                    stream.write(data)
-
-                stream.close()
-                audio.terminate()
+            stream.close()
+            py_audio.terminate()
 
             # Delete the output files after playback
             os.remove(OUTPUT_FILE)
@@ -106,16 +85,5 @@ def addToTtsQueue(message):
 
 # Start the TTS thread
 def startTtsThread():
-    setup_tts()  # Set up TTS settings before starting the thread
     tts_thread = threading.Thread(target=process_tts_queue, daemon=True)
     tts_thread.start()
-
-# Example usage
-# if __name__ == "__main__":
-#     startTtsThread()
-
-#     # Add some text to the queue for testing
-#     addToTtsQueue("Hello, this is a test message. Please check the output.")
-#     time.sleep(3)  # Wait for TTS to finish playing
-#     addToTtsQueue("Another test message.")
-#     time.sleep(3)  # Wait for the second TTS to finish
