@@ -146,7 +146,7 @@ def process_message(user, message):
             model="llama3-8b-8192",
             messages=messages,
             temperature=1,
-            max_tokens=1024,
+            max_tokens=2000,
             top_p=1,
             stream=False,
         )
@@ -176,7 +176,7 @@ def checkInactivity():
             if timeInactive >= INACTIVITY_THRESHOLD:
                 process_message("system", "Foxie has noticed that there has been no activity for a while. Talk about something random but something which makes sense!")
                 timeInactive = 0
-                
+
 inactivity_thread = threading.Thread(target=checkInactivity, daemon=True)
 inactivity_thread.start()
 
