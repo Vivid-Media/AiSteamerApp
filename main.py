@@ -2,12 +2,14 @@ import json
 import os
 import logging
 import threading
+import time
 from groq import Groq
 from irc.client import SimpleIRCClient
 from tts_handler import addToTtsQueue, startTtsThread
 
 SERVER = "irc.chat.twitch.tv"
 PORT = 6667
+timeInactive = 0
 NICKNAME = 'extramayaboop'
 TOKEN = "oauth:j440a3addmqq4nng1o46sg6sguz5tw"
 CHANNEL = "#extramayaboop"
@@ -15,6 +17,8 @@ CHANNEL = "#extramayaboop"
 user_message = ""
 user_nickname = ""
 long_term_memory = {"roles": {"mom": ["extramayaboop"]}, "personality": [], "remembered_users": []}
+timeInactive = 0
+INACTIVITY_THRESHOLD = 120 
 
 foxie_persona = """
 You are Foxie, a cheerful and energetic VTuber. You love chatting, playing games like Minecraft and osu!, and singing!
@@ -162,9 +166,26 @@ load_memory()
 startTtsThread()
 threading.Thread(target=start_irc_client, daemon=True).start()
 
+def checkInactivity():
+    global timeInactive 
+    
+    while True:
+        time.sleep(5) 
+        if user_message == "":  
+            timeInactive += 5  
+            if timeInactive >= INACTIVITY_THRESHOLD:
+                process_message("system", "Foxie has noticed that there has been no activity for a while. Talk about something random but something which makes sense!")
+                timeInactive = 0
+                
+inactivity_thread = threading.Thread(target=checkInactivity, daemon=True)
+inactivity_thread.start()
+
 while True:
     if user_message:
         logging.info(f"Processing message from {user_nickname}: {user_message}")
         reply = process_message(user_nickname, user_message)
         print(reply)
-        user_message = ""
+        user_message = ""  # Reset after processing
+        timeInactive = 0  # Reset inactivity timer after user message
+    else:
+        time.sleep(1)
