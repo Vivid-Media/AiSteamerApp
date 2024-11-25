@@ -158,7 +158,7 @@ def process_message(user, message):
         return response.strip()
 
     except Exception as e:
-        return "Foxie: Mom fix me, my AI is broken."
+        return "Mom fix me, my AI is broken."
 
 
 groq_client = Groq(api_key="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")
