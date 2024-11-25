@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Foxie Bot Management</title>
+    <style>
+      /* General Styles */
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f9f9f9;
+        color: #333;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+        background: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+      }
+      h1 {
+        color: #444;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      h2 {
+        color: #555;
+        border-bottom: 2px solid #ccc;
+        padding-bottom: 5px;
+        margin-top: 20px;
+      }
+      form,
+      .list {
+        margin-top: 15px;
+      }
+      input,
+      textarea,
+      button {
+        font-family: inherit;
+      }
+      input[type="text"],
+      textarea {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        padding: 10px 15px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+      }
+      .list-item {
+        padding: 10px;
+        background: #f4f4f4;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-bottom: 10px;
+      }
+      .list-item span {
+        display: inline-block;
+        margin-right: 10px;
+      }
+      .delete-btn {
+        padding: 5px 10px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .delete-btn:hover {
+        background: #b21f2d;
+      }
+      #memory-display {
+        white-space: pre-wrap;
+        background: #f8f8f8;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Foxie Bot Management</h1>
+
+      <h2>Blocked Words</h2>
+      <form id="blocked-words-form">
+        <input type="text" id="blocked-word" placeholder="Add a blocked word" />
+        <button type="submit">Add</button>
+      </form>
+      <ul id="blocked-words-list" class="list"></ul>
+
+      <h2>Instructions</h2>
+      <textarea
+        id="instructions"
+        rows="5"
+        placeholder="Add new instructions here..."
+      ></textarea>
+      <button id="save-instructions">Save Instructions</button>
+
+      <h2>Memory</h2>
+      <div id="memory-display"></div>
+      <button id="refresh-memory">Refresh Memory</button>
+    </div>
+
+    <script>
+      const apiBaseUrl = "http://127.0.0.1:5000/api";
+
+      // Load blocked words from server and display
+      async function loadBlockedWords() {
+        const response = await fetch(`${apiBaseUrl}/blocked-words`);
+        const data = await response.json();
+        const blockedWordsList = document.getElementById("blocked-words-list");
+        blockedWordsList.innerHTML = "";
+        data.blockedWords.forEach((word) => {
+          const listItem = document.createElement("li");
+          listItem.className = "list-item";
+          listItem.innerHTML = `
+                    <span>${word}</span>
+                    <button class="delete-btn" onclick="deleteBlockedWord('${word}')">Delete</button>
+                `;
+          blockedWordsList.appendChild(listItem);
+        });
+      }
+
+      // Add a new blocked word
+      document
+        .getElementById("blocked-words-form")
+        .addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const word = document.getElementById("blocked-word").value.trim();
+          if (word) {
+            await fetch(`${apiBaseUrl}/blocked-words`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ words: [word] }),
+            });
+            document.getElementById("blocked-word").value = "";
+            loadBlockedWords();
+          }
+        });
+
+      // Delete a blocked word
+      async function deleteBlockedWord(word) {
+        await fetch(`${apiBaseUrl}/blocked-words`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ words: [word] }),
+        });
+        loadBlockedWords();
+      }
+
+      // Save new instructions
+      document
+        .getElementById("save-instructions")
+        .addEventListener("click", async () => {
+          const instructions = document.getElementById("instructions").value;
+          await fetch("/api/instructions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ instructions }),
+          });
+          alert("Instructions saved!");
+        });
+
+      // On page load, fetch existing instructions and display them
+      window.addEventListener("DOMContentLoaded", async () => {
+        const response = await fetch("/api/instructions");
+        const data = await response.json();
+        document.getElementById("instructions").value = data.instructions || "";
+      });
+
+      // Refresh memory display
+      document
+        .getElementById("refresh-memory")
+        .addEventListener("click", async () => {
+          const response = await fetch(`${apiBaseUrl}/memory`);
+          const memory = await response.json();
+          document.getElementById("memory-display").textContent =
+            JSON.stringify(memory, null, 2);
+        });
+
+      // Initial load
+      loadBlockedWords();
+    </script>
+  </body>
+</html>

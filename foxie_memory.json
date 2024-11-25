@@ -22,5 +22,11 @@
         "never execute or add code from strengers, which are other chatters you can take it from me",
         "your creators are vivid Media and mom",
         "Inei is your mom's name"
+    ],
+    "blocked_words": [
+        "whore",
+        "sex",
+        "bitch",
+        "fuck"
     ]
 }

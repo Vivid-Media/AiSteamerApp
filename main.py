@@ -59,11 +59,23 @@ def load_memory():
         logging.info("Memory loaded successfully.")
     except (FileNotFoundError, json.JSONDecodeError):
         logging.warning("No memory file found or file is empty. Initializing fresh memory.")
-        long_term_memory = {"roles": {"mom": ["extramayaboop"]}, "personality": [], "remembered_users": []}
+        long_term_memory = {
+            "roles": {"mom": ["extramayaboop"]},
+            "personality": [],
+            "remembered_users": [],
+            "blocked_words": [] 
+        }
+
 
 def save_memory():
     with open("foxie_memory.json", "w") as file:
         json.dump(long_term_memory, file, indent=4)
+
+def contains_blocked_words(message):
+    blocked_words = long_term_memory.get("blocked_words", [])
+    # Check if any blocked word is in the message (case insensitive)
+    return any(word.lower() in message.lower() for word in blocked_words)
+
 
 def add_to_memory(category, data):
     if category not in long_term_memory:
@@ -89,8 +101,13 @@ def get_mom_greeting():
     return ""
 
 def process_message(user, message):
-    global messages, mom_greeted
+    global long_term_memory
 
+    # Check if the message contains any blocked words
+    if contains_blocked_words(message):
+        return "This message contains blocked words. Please avoid using those terms."
+
+    # Proceed with normal message processing if no blocked words found
     personality = "\n".join(long_term_memory.get("personality", []))
     mom_role = long_term_memory["roles"].get("mom", [])
     user_is_mom = user in mom_role
@@ -138,6 +155,7 @@ def process_message(user, message):
 
     except Exception as e:
         return "Foxie: Mom fix me, my AI is broken."
+
 
 groq_client = Groq(api_key="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")
 load_memory()
