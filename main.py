@@ -18,7 +18,7 @@ user_message = ""
 user_nickname = ""
 long_term_memory = {"roles": {"mom": ["extramayaboop"]}, "personality": [], "remembered_users": []}
 timeInactive = 0
-INACTIVITY_THRESHOLD = 120 
+INACTIVITY_THRESHOLD = 300
 
 foxie_persona = """
 You are Foxie, a cheerful and energetic VTuber. You love chatting, playing games like Minecraft and osu!, and singing!
