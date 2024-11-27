@@ -10,13 +10,13 @@ from tts_handler import addToTtsQueue, startTtsThread
 SERVER = "irc.chat.twitch.tv"
 PORT = 6667
 timeInactive = 0
-NICKNAME = 'extramayaboop'
+NICKNAME = 'IneiDemonGirl'
 TOKEN = "oauth:j440a3addmqq4nng1o46sg6sguz5tw"
-CHANNEL = "#extramayaboop"
+CHANNEL = "#IneiDemonGirl"
 
 user_message = ""
 user_nickname = ""
-long_term_memory = {"roles": {"mom": ["extramayaboop"]}, "personality": [], "remembered_users": []}
+long_term_memory = {"roles": {"mom": ["IneiDemonGirl"]}, "personality": [], "remembered_users": []}
 timeInactive = 0
 INACTIVITY_THRESHOLD = 300
 
