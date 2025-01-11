@@ -10,9 +10,9 @@ from tts_handler import addToTtsQueue, startTtsThread
 SERVER = "irc.chat.twitch.tv"
 PORT = 6667
 timeInactive = 0
-NICKNAME = 'IneiDemonGirl'
-TOKEN = "oauth:j440a3addmqq4nng1o46sg6sguz5tw"
-CHANNEL = "#IneiDemonGirl"
+NICKNAME = 'Channel Twitch Name'
+TOKEN = "oauth:YOUR-TOKEN"
+CHANNEL = "#ChannelName"
 
 user_message = ""
 user_nickname = ""
@@ -161,7 +161,7 @@ def process_message(user, message):
         return "Mom fix me, my AI is broken."
 
 
-groq_client = Groq(api_key="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")
+groq_client = Groq(api_key="YOUR-GROQ_AI_API-TOKEN")
 load_memory()
 startTtsThread()
 threading.Thread(target=start_irc_client, daemon=True).start()
